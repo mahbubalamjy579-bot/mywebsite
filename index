@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayQuick - Firebase Powered Wallet</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --app-bg: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.6);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            --success: #10b981;
+            --danger: #ef4444;
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            --bottom-nav-bg: rgba(255, 255, 255, 0.9);
+            --input-bg: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --app-bg: #090d16;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            --success: #34d399;
+            --danger: #f87171;
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --bottom-nav-bg: rgba(15, 23, 42, 0.9);
+            --input-bg: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg-gradient); min-height: 100vh; display: flex; justify-content: center; align-items: center; color: var(--text-main); }
+        
+        .app-container {
+            width: 100%; max-width: 430px; height: 100vh; max-height: 932px;
+            background: var(--app-bg); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (min-width: 480px) {
+            .app-container { height: 90vh; border-radius: 40px; border: 8px solid rgba(255, 255, 255, 0.2); }
+        }
+
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--card-border); border-radius: 24px; box-shadow: var(--glass-shadow); }
+        .app-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .user-profile-summary { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+        .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--card-bg); color: var(--text-main); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        .app-content { flex: 1; overflow-y: auto; padding: 0 20px 90px 20px; }
+        .view { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .view.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .wallet-card { background: var(--primary-gradient); color: white; padding: 24px; border-radius: 28px; margin-bottom: 20px; }
+        .wallet-balance { font-size: 32px; font-weight: 800; margin: 8px 0 20px 0; }
+        .wallet-actions { display: flex; gap: 10px; }
+        .wallet-btn { flex: 1; padding: 10px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 14px; color: white; font-weight: 600; cursor: pointer; }
+
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); }
+        .input-box { position: relative; display: flex; align-items: center; }
+        .input-box i { position: absolute; left: 16px; color: var(--text-muted); }
+        .form-input { width: 100%; padding: 14px 16px 14px 44px; background: var(--input-bg); border: 1px solid transparent; border-radius: 16px; color: var(--text-main); outline: none; }
+        .btn-primary { width: 100%; padding: 16px; background: var(--primary-gradient); border: none; border-radius: 18px; color: white; font-size: 16px; font-weight: 700; cursor: pointer; }
+
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; height: 70px; background: var(--bottom-nav-bg); backdrop-filter: blur(16px); display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+
+        .auth-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--app-bg); z-index: 300; padding: 30px 24px; display: flex; flex-direction: column; justify-content: center; }
+        
+        .transaction-item { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-radius: 18px; margin-bottom: 10px; }
+        .tx-amount.negative { color: var(--danger); }
+        .tx-amount.positive { color: var(--success); }
+        
+        .modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 200; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-body { width: 100%; max-width: 340px; padding: 24px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Auth Screen -->
+        <div id="authScreen" class="auth-overlay">
+            <div id="loginForm">
+                <div style="text-align:center; margin-bottom: 30px;">
+                    <i class="fa-solid fa-wallet" style="font-size: 48px; color: var(--primary);"></i>
+                    <h1 style="font-size: 26px;">PayQuick</h1>
+                    <p style="color: var(--text-muted); font-size: 13px;">Firebase Cloud Wallet</p>
+                </div>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <div class="input-box"><i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="loginEmail" class="form-input" placeholder="user@domain.com" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-box"><i class="fa-solid fa-lock"></i>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required></div>
+                    </div>
+                    <button type="submit" class="btn-primary">Log In</button>
+                </form>
+                <div style="text-align:center; margin-top: 20px; font-size: 13px;">
+                    Don't have an account? <a href="#" onclick="toggleAuth('signup')" style="color:var(--primary); font-weight:700;">Sign Up</a>
+                </div>
+            </div>
+
+            <div id="signupForm" style="display: none;">
+                <div style="text-align:center; margin-bottom: 30px;">
+                    <i class="fa-solid fa-user-plus" style="font-size: 48px; color: var(--primary);"></i>
+                    <h1 style="font-size: 26px;">Create Account</h1>
+                </div>
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <div class="input-box"><i class="fa-solid fa-user"></i>
+                        <input type="text" id="regName" class="form-input" placeholder="John Doe" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mobile Number</label>
+                        <div class="input-box"><i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="regMobile" class="form-input" placeholder="01700000000" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <div class="input-box"><i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="regEmail" class="form-input" placeholder="name@example.com" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-box"><i class="fa-solid fa-lock"></i>
+                        <input type="password" id="regPassword" class="form-input" placeholder="••••••••" required></div>
+                    </div>
+                    <button type="submit" class="btn-primary">Sign Up</button>
+                </form>
+                <div style="text-align:center; margin-top: 20px; font-size: 13px;">
+                    Already have an account? <a href="#" onclick="toggleAuth('login')" style="color:var(--primary); font-weight:700;">Log In</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="user-profile-summary">
+                <img id="headerAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="avatar">
+                <div>
+                    <h4 style="font-size: 12px; color: var(--text-muted);">Welcome back,</h4>
+                    <h2 id="headerUserName" style="font-size: 16px;">User</h2>
+                </div>
+            </div>
+            <button class="icon-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+        </header>
+
+        <!-- Content Views -->
+        <main class="app-content">
+            <!-- 1. Home Dashboard -->
+            <div id="view-home" class="view active">
+                <div class="wallet-card">
+                    <div style="font-size: 14px; opacity:0.8;">Available Balance</div>
+                    <div class="wallet-balance">৳<span id="dashBalance">0.00</span></div>
+                    <div class="wallet-actions">
+                        <button class="wallet-btn" onclick="switchTab('payments')"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                        <button class="wallet-btn" onclick="openAddMoneyModal()"><i class="fa-solid fa-plus-circle"></i> Add Money</button>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 12px; font-size: 16px;">Recent Transactions</h3>
+                <div id="recentTransactionsList"></div>
+            </div>
+
+            <!-- 2. Send Money View -->
+            <div id="view-payments" class="view">
+                <h3 style="margin: 10px 0;">Send Money</h3>
+                <div class="glass-card" style="padding: 20px;">
+                    <form onsubmit="handlePayment(event)">
+                        <div class="form-group">
+                            <label class="form-label">Receiver Mobile Number</label>
+                            <div class="input-box"><i class="fa-solid fa-mobile-retro"></i>
+                            <input type="tel" id="payMobile" class="form-input" placeholder="01700000000" required></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount (BDT)</label>
+                            <div class="input-box"><i class="fa-solid fa-bangladeshi-taka-sign"></i>
+                            <input type="number" id="payAmount" class="form-input" placeholder="0.00" min="10" required></div>
+                        </div>
+                        <button type="submit" class="btn-primary">Transfer Funds</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. Transactions History View -->
+            <div id="view-transactions" class="view">
+                <h3 style="margin: 10px 0;">Transaction History</h3>
+                <div id="fullTransactionsList"></div>
+            </div>
+
+            <!-- 4. Profile View -->
+            <div id="view-profile" class="view">
+                <div class="glass-card" style="padding: 24px; text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                    <h2 id="profileName">User Name</h2>
+                    <p id="profileMobile" style="font-size: 13px; color: var(--text-muted);"></p>
+                    <p id="profileEmail" style="font-size: 12px; color: var(--text-muted);"></p>
+                </div>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #ef4444, #dc2626);" onclick="handleLogout()">Logout Account</button>
+            </div>
+        </main>
+
+        <!-- Navigation Bar -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('home')"><i class="fa-solid fa-house" style="font-size:20px;"></i><span>Home</span></div>
+            <div class="nav-item" onclick="switchTab('payments')"><i class="fa-solid fa-paper-plane" style="font-size:20px;"></i><span>Pay</span></div>
+            <div class="nav-item" onclick="switchTab('transactions')"><i class="fa-solid fa-clock-rotate-left" style="font-size:20px;"></i><span>History</span></div>
+            <div class="nav-item" onclick="switchTab('profile')"><i class="fa-solid fa-user" style="font-size:20px;"></i><span>Profile</span></div>
+        </nav>
+    </div>
+
+    <!-- Firebase SDK (Modular v9/v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 🔥 আপনার Firebase কনফিগারেশন কীসমূহ এখানে বসান 🔥
+        const firebaseConfig = {
+  apiKey: "AIzaSyC_ZI9lK5tJmChTPLXNorh_EdHn7eBGt8g",
+  authDomain: "app12-44a95.firebaseapp.com",
+  databaseURL: "https://app12-44a95-default-rtdb.firebaseio.com",
+  projectId: "app12-44a95",
+  storageBucket: "app12-44a95.firebasestorage.app",
+  messagingSenderId: "947540603514",
+  appId: "1:947540603514:web:af920eeddc406c281441c3"
+};
+
+        // Firebase ইনিশিয়ালাইজেশন
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserData = null;
+
+        // --- Auth Listener ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+               document.getElementById('authScreen').style.display = 'none';
+                listenToUserData(user.uid);
+                listenToTransactions(user.uid);
+            } else {
+                document.getElementById('authScreen').style.display = 'flex';
+            }
+        });
+
+        // Sign Up System
+        window.handleSignup = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const mobile = document.getElementById('regMobile').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Save profile database
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    name: name,
+                    mobile: mobile,
+                    email: email,
+                    balance: 1000.00, // Welcome bonus
+                    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"
+                });
+
+                // Initial Bonus Transaction Record
+                await addDoc(collection(db, "transactions"), {
+                    userId: user.uid,
+                    type: "receive",
+                    senderReceiver: "Welcome Bonus",
+                    amount: 1000.00,
+                    date: new Date().toLocaleString(),
+                    status: "Success"
+                });
+
+                alert("Registration Successful!");
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+
+        // Login System
+        window.handleLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                alert("Login Failed: " + error.message);
+            }
+        };
+
+        // Logout
+        window.handleLogout = () => {
+            signOut(auth);
+        };
+
+        // Real-time Database Observer for User
+        function listenToUserData(uid) {
+            onSnapshot(doc(db, "users", uid), (docSnap) => {
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    document.getElementById('headerUserName').innerText = currentUserData.name;
+                    document.getElementById('dashBalance').innerText = parseFloat(currentUserData.balance).toFixed(2);
+                    document.getElementById('profileName').innerText = currentUserData.name;
+                    document.getElementById('profileMobile').innerText = currentUserData.mobile;
+                    document.getElementById('profileEmail').innerText = currentUserData.email;
+                }
+            });
+        }
+
+        // Send Money Functionality
+        window.handlePayment = async (e) => {
+            e.preventDefault();
+            const receiverMobile = document.getElementById('payMobile').value;
+            const amount = parseFloat(document.getElementById('payAmount').value);
+
+            if (amount <= 0 || isNaN(amount)) return alert("Invalid amount!");
+            if (amount > currentUserData.balance) return alert("Insufficient Balance!");
+
+            try {
+                // Update User Balance in Cloud
+                const newBalance = currentUserData.balance - amount;
+                await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                    balance: newBalance
+                });
+
+                // Store Transaction Detail in Cloud
+                await addDoc(collection(db, "transactions"), {
+                    userId: auth.currentUser.uid,
+                    type: "send",
+                    senderReceiver: receiverMobile,
+                    amount: amount,
+                    date: new Date().toLocaleString(),
+                    status: "Success"
+                });
+
+                alert("Payment Successful!");
+                switchTab('home');
+            } catch (error) {
+                alert("Transaction Failed: " + error.message);
+            }
+        };
+
+        // Deposit Add Money Simulator
+        window.openAddMoneyModal = async () => {
+            const amount = prompt("Deposit Amount (BDT):", "500");
+            if (amount && parseFloat(amount) > 0) {
+                const addAmt = parseFloat(amount);
+                await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                    balance: currentUserData.balance + addAmt
+                });
+
+                await addDoc(collection(db, "transactions"), {
+                    userId: auth.currentUser.uid,
+                    type: "receive",
+                    senderReceiver: "Bank Add Money",
+                    amount: addAmt,
+                    date: new Date().toLocaleString(),
+                    status: "Success"
+                });
+                alert("Funds Added!");
+            }
+        };
+
+        // Real-time Database Observer for Transactions
+        function listenToTransactions(uid) {
+            const q = query(collection(db, "transactions"), where("userId", "==", uid));
+            onSnapshot(q, (snapshot) => {
+                let txList = [];
+                snapshot.forEach((doc) => txList.push(doc.data()));
+
+                const renderItem = (tx) => `
+                    <div class="glass-card transaction-item">
+                        <div>
+                            <h4>${tx.senderReceiver}</h4>
+                            <p style="font-size:11px; color:var(--text-muted);">${tx.date}</p>
+                        </div>
+                        <div class="tx-amount ${tx.type === 'send' ? 'negative' : 'positive'}">
+                            <h4>${tx.type === 'send' ? '-' : '+'}৳${tx.amount.toFixed(2)}</h4>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('recentTransactionsList').innerHTML = txList.slice(0, 3).map(renderItem).join('');
+                document.getElementById('fullTransactionsList').innerHTML = txList.map(renderItem).join('');
+            });
+        }
+
+        // Global Utility Functions
+        window.toggleAuth = (type) => {
+            document.getElementById('loginForm').style.display = type === 'signup' ? 'none' : 'block';
+            document.getElementById('signupForm').style.display = type === 'signup' ? 'block' : 'none';
+        };
+
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tabName}`).classList.add('active');
+        };
+
+        window.toggleTheme = () => {
+            const html = document.documentElement;
+            html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        };
+    </script>
+</body>
+</html>
